@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EmotionSense AI — Live Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-deep:    #080C10;
+  --bg-base:    #0D1117;
+  --bg-card:    #161B22;
+  --bg-card2:   #1C2128;
+  --border:     #30363D;
+  --border-hi:  #58A6FF44;
+  --accent:     #58A6FF;
+  --accent-glow:#58A6FF33;
+  --green:      #7EE787;
+  --red:        #F78166;
+  --purple:     #D2A8FF;
+  --orange:     #FFA657;
+  --yellow:     #E3B341;
+  --text-main:  #E6EDF3;
+  --text-sub:   #8B949E;
+  --text-dim:   #484F58;
+  --radius:     12px;
+  --radius-sm:  8px;
+  --font:       'Inter', sans-serif;
+  --mono:       'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg-deep);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(13,17,23,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px;
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 1.1rem; font-weight: 700; color: var(--text-main);
+  text-decoration: none;
+}
+.nav-brand .logo-icon {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+  padding: 6px 14px; border-radius: var(--radius-sm);
+  color: var(--text-sub); text-decoration: none;
+  font-size: 0.875rem; font-weight: 500;
+  transition: all .2s;
+}
+.nav-links a:hover, .nav-links a.active {
+  color: var(--text-main); background: var(--bg-card);
+}
+.nav-links a.active { color: var(--accent); }
+
+.hero {
+  padding: 2rem 2rem 0;
+  display: flex; align-items: center; gap: 16px;
+}
+.hero-title { font-size: 1.5rem; font-weight: 700; }
+.hero-title span { color: var(--accent); }
+.hero-sub { color: var(--text-sub); font-size: 0.875rem; margin-top: 3px; }
+.status-pill {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--bg-card); font-size: 0.8rem;
+  color: var(--text-sub);
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--text-dim);
+  transition: background .3s;
+}
+.status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse-dot 1.5s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem 2rem;
+  max-width: 1400px;
+}
+
+.camera-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.panel-header {
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem; font-weight: 600;
+}
+.panel-header .ph-icon { color: var(--accent); }
+.ph-badge {
+  margin-left: auto;
+  background: var(--bg-deep); border: 1px solid var(--border);
+  border-radius: 6px; padding: 2px 10px;
+  font-family: var(--mono); font-size: 0.75rem; color: var(--text-sub);
+}
+
+.feed-wrap {
+  position: relative;
+  background: #000;
+  flex: 1;
+}
+#videoFeed {
+  width: 100%; display: block;
+  min-height: 380px; object-fit: cover;
+}
+.feed-overlay {
+  position: absolute; top: 12px; left: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.feed-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 6px;
+  background: rgba(13,17,23,0.82);
+  border: 1px solid var(--border);
+  font-size: 0.75rem; font-family: var(--mono);
+  backdrop-filter: blur(8px);
+}
+.feed-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+.dot-green { background: var(--green); }
+.dot-blue  { background: var(--accent); }
+.dot-red   { background: var(--red); }
+
+.no-face-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(8,12,16,0.85);
+  gap: 12px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .4s;
+}
+.no-face-overlay.show { opacity: 1; }
+.no-face-overlay i { font-size: 3rem; color: var(--text-dim); }
+.no-face-overlay p { color: var(--text-sub); font-size: 0.9rem; }
+
+.cam-controls {
+  padding: 14px 16px;
+  display: flex; gap: 10px; align-items: center;
+  border-top: 1px solid var(--border);
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 18px; border-radius: var(--radius-sm);
+  font-size: 0.85rem; font-weight: 600; border: none;
+  cursor: pointer; transition: all .2s; font-family: var(--font);
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #79BAFF; box-shadow: 0 0 16px var(--accent-glow); }
+.btn-danger  { background: var(--red);   color: #fff; }
+.btn-danger:hover  { filter: brightness(1.15); }
+.btn-ghost   { background: var(--bg-card2); color: var(--text-sub); border: 1px solid var(--border); }
+.btn-ghost:hover   { color: var(--text-main); border-color: var(--accent); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.candidate-input {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+}
+.candidate-input input {
+  background: var(--bg-deep); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-main);
+  padding: 7px 12px; font-size: 0.83rem; font-family: var(--font);
+  width: 170px; outline: none;
+  transition: border-color .2s;
+}
+.candidate-input input:focus { border-color: var(--accent); }
+.candidate-input label { font-size: 0.8rem; color: var(--text-sub); }
+
+.sidebar { display: flex; flex-direction: column; gap: 1rem; }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card-body { padding: 14px 16px; }
+
+.emotion-main {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 16px; gap: 6px;
+}
+.emotion-icon { font-size: 3rem; line-height: 1; }
+.emotion-label {
+  font-size: 1.4rem; font-weight: 700;
+  transition: color .3s;
+}
+.emotion-conf { font-family: var(--mono); font-size: 1rem; color: var(--accent); }
+
+/* Emotion bars */
+.emo-bars { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.emo-row { display: flex; align-items: center; gap: 8px; }
+.emo-name { font-size: 0.75rem; color: var(--text-sub); width: 52px; }
+.emo-track {
+  flex: 1; height: 6px; border-radius: 3px;
+  background: var(--bg-deep); overflow: hidden;
+}
+.emo-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+.emo-pct { font-size: 0.7rem; font-family: var(--mono); color: var(--text-dim); width: 34px; text-align: right; }
+
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px; }
+.kpi-tile {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+.kpi-label { font-size: 0.7rem; color: var(--text-sub); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+.kpi-value { font-size: 1.3rem; font-weight: 700; font-family: var(--mono); margin-top: 4px; }
+.kpi-sub   { font-size: 0.7rem; color: var(--text-sub); margin-top: 2px; }
+
+.ring-wrap {
+  display: flex; justify-content: space-around;
+  padding: 14px 10px;
+}
+.ring-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ring-label { font-size: 0.72rem; color: var(--text-sub); font-weight: 500; }
+.ring-svg { transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--bg-deep); }
+.ring-fill  { fill: none; stroke-linecap: round; transition: stroke-dashoffset .5s ease; }
+.ring-text  { font-family: var(--mono); font-size: 9px; fill: var(--text-main); dominant-baseline: middle; text-anchor: middle; }
+
+.chart-wrap { padding: 8px 14px 14px; height: 170px; position: relative; }
+
+.alert-row { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+.alert-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  background: var(--bg-deep); border-left: 3px solid var(--border);
+  font-size: 0.8rem;
+}
+.alert-item.good   { border-color: var(--green); }
+.alert-item.warn   { border-color: var(--yellow); }
+.alert-item.danger { border-color: var(--red); }
+.alert-item i { font-size: 0.9rem; }
+.alert-item.good   i { color: var(--green); }
+.alert-item.warn   i { color: var(--yellow); }
+.alert-item.danger i { color: var(--red); }
+
+.c-happy    { color: #7EE787 !important; }
+.c-sad      { color: #58A6FF !important; }
+.c-angry    { color: #F78166 !important; }
+.c-fear     { color: #D2A8FF !important; }
+.c-surprise { color: #79C0FF !important; }
+.c-disgust  { color: #FFA657 !important; }
+.c-neutral  { color: #8B949E !important; }
+
+.f-happy    { background: #7EE787; }
+.f-sad      { background: #58A6FF; }
+.f-angry    { background: #F78166; }
+.f-fear     { background: #D2A8FF; }
+.f-surprise { background: #79C0FF; }
+.f-disgust  { background: #FFA657; }
+.f-neutral  { background: #8B949E; }
+
+@keyframes rec-pulse { 0%,100%{box-shadow:0 0 0 0 #F7816644} 50%{box-shadow:0 0 0 6px #F7816600} }
+.recording-indicator {
+  display: none; align-items: center; gap: 6px;
+  font-size: 0.78rem; font-weight: 600; color: var(--red);
+}
+.recording-indicator.show { display: flex; }
+.rec-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--red); animation: rec-pulse 1s infinite;
+}
+
+.session-timer { font-family: var(--mono); color: var(--orange); font-size: 0.85rem; }
+
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .sidebar { flex-direction: row; flex-wrap: wrap; }
+  .sidebar .card { flex: 1 1 280px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/">
+    <div class="logo-icon">🧠</div>
+    EmotionSense AI
+  </a>
+  <div class="nav-links">
+    <a href="/" class="active"><i class="fa-solid fa-video"></i> Live</a>
+    <a href="/dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div>
+    <div class="hero-title">Real-Time <span>Emotion & Behaviour</span> Analysis</div>
+    <div class="hero-sub">MediaPipe · OpenCV · Behavioral AI · Interview Analytics</div>
+  </div>
+  <div class="status-pill">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Connecting…</span>
+  </div>
+</div>
+
+<div class="main-grid">
+
+  <!-- CAMERA PANEL -->
+  <div class="camera-panel">
+    <div class="panel-header">
+      <i class="fa-solid fa-camera-retro ph-icon"></i>
+      Live Webcam Feed
+      <div class="recording-indicator" id="recIndicator">
+        <div class="rec-dot"></div> REC
+        <span class="session-timer" id="sessionTimer">00:00</span>
+      </div>
+      <div class="ph-badge" id="fpsBadge">-- FPS</div>
+    </div>
+
+    <div class="feed-wrap">
+      <img id="videoFeed" src="/video_feed" alt="Live Feed"/>
+      <div class="feed-overlay">
+        <div class="feed-badge" id="faceBadge">
+          <div class="dot dot-blue"></div>
+          <span id="faceStatus">Detecting…</span>
+        </div>
+        <div class="feed-badge" id="attBadge">
+          <div class="dot dot-green"></div>
+          <span id="attStatus">Attention: —</span>
+        </div>
+      </div>
+      <div class="no-face-overlay" id="noFaceOverlay">
+        <i class="fa-solid fa-face-meh-blank"></i>
+        <p>No face detected — position yourself in frame</p>
+      </div>
+    </div>
+
+    <div class="cam-controls">
+      <button class="btn btn-primary" id="btnStart" onclick="startSession()">
+        <i class="fa-solid fa-circle-dot"></i> Start Recording
+      </button>
+      <button class="btn btn-danger" id="btnStop" onclick="stopSession()" disabled>
+        <i class="fa-solid fa-stop"></i> Stop
+      </button>
+      <button class="btn btn-ghost" onclick="goToDashboard()">
+        <i class="fa-solid fa-chart-bar"></i> Dashboard
+      </button>
+      <div class="candidate-input">
+        <label for="candidateName">Candidate:</label>
+        <input type="text" id="candidateName" placeholder="Your name" value="Candidate"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+
+    <div class="card">
+      <div class="panel-header">
+        <i class="fa-solid fa-face-smile ph-icon"></i> Detected Emotion
+      </div>
+      <div class="emotion-main">
+        <div class="emotion-icon" id="emoIcon">😐</div>
+        <div class="emotion-label" id="emoLabel">Neutral</div>
+        <div class="emotion-conf" id="emoConf">0%</div>
+      </div>
+      <div class="emo-bars" id="emoBars">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="panel-header">
+        <i class="fa-solid fa-gauge-high ph-icon"></i> Live Metrics
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-tile">
+          <div class="kpi-label">Confidence</div>
+          <div class="kpi-value" id="kpiConf" style="color:var(--green)">—</div>
+          <div class="kpi-sub" id="kpiConfLvl">—</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Stress Level</div>
+          <div class="kpi-value" id="kpiStress" style="color:var(--orange)">—</div>
+          <div class="kpi-sub" id="kpiStressLvl">—</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Eye Contact</div>
+          <div class="kpi-value" id="kpiEye" style="color:var(--accent)">—</div>
+          <div class="kpi-sub" id="kpiEyeLvl">—</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Attention</div>
+          <div class="kpi-value" id="kpiAtt" style="color:var(--purple)">—</div>
+          <div class="kpi-sub" id="kpiAttLvl">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="panel-header">
+        <i class="fa-solid fa-circle-half-stroke ph-icon"></i> Score Rings
+      </div>
+      <div class="ring-wrap">
+        <div class="ring-item">
+          <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+            <circle class="ring-track" cx="36" cy="36" r="28" stroke-width="7"/>
+            <circle class="ring-fill" id="ringConf" cx="36" cy="36" r="28"
+              stroke="#7EE787" stroke-width="7"
+              stroke-dasharray="175.9" stroke-dashoffset="175.9"/>
+            <text class="ring-text" x="36" y="36" transform="rotate(90,36,36)" id="ringConfTxt">0%</text>
+          </svg>
+          <span class="ring-label">Confidence</span>
+        </div>
+        <div class="ring-item">
+          <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+            <circle class="ring-track" cx="36" cy="36" r="28" stroke-width="7"/>
+            <circle class="ring-fill" id="ringEye" cx="36" cy="36" r="28"
+              stroke="#58A6FF" stroke-width="7"
+              stroke-dasharray="175.9" stroke-dashoffset="175.9"/>
+            <text class="ring-text" x="36" y="36" transform="rotate(90,36,36)" id="ringEyeTxt">0%</text>
+          </svg>
+          <span class="ring-label">Eye Contact</span>
+        </div>
+        <div class="ring-item">
+          <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+            <circle class="ring-track" cx="36" cy="36" r="28" stroke-width="7"/>
+            <circle class="ring-fill" id="ringStress" cx="36" cy="36" r="28"
+              stroke="#F78166" stroke-width="7"
+              stroke-dasharray="175.9" stroke-dashoffset="175.9"/>
+            <text class="ring-text" x="36" y="36" transform="rotate(90,36,36)" id="ringStressTxt">0%</text>
+          </svg>
+          <span class="ring-label">Stress</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="panel-header">
+        <i class="fa-solid fa-bell ph-icon"></i> Live Alerts
+      </div>
+      <div class="alert-row" id="alertRow">
+        <div class="alert-item">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Waiting for detection…</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="panel-header">
+        <i class="fa-solid fa-chart-area ph-icon"></i> Timeline
+      </div>
+      <div class="chart-wrap">
+        <canvas id="timelineChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const EMOTIONS = ["Happy","Sad","Angry","Fear","Surprise","Disgust","Neutral"];
+const EMO_ICONS = {
+  Happy:"😄", Sad:"😢", Angry:"😠", Fear:"😨",
+  Surprise:"😲", Disgust:"🤢", Neutral:"😐"
+};
+const EMO_COLORS = {
+  Happy:"#7EE787", Sad:"#58A6FF", Angry:"#F78166",
+  Fear:"#D2A8FF", Surprise:"#79C0FF", Disgust:"#FFA657", Neutral:"#8B949E"
+};
+
+let recording = false;
+let sessionKey = null;
+let sessionStart = null;
+let timerInterval = null;
+const CIRCUM = 175.9; 
+
+const tlCtx = document.getElementById("timelineChart").getContext("2d");
+const tlData = { labels:[], conf:[], stress:[], att:[] };
+const tlChart = new Chart(tlCtx, {
+  type: "line",
+  data: {
+    labels: tlData.labels,
+    datasets: [
+      { label:"Confidence", data: tlData.conf,   borderColor:"#7EE787", tension:.4, pointRadius:0, borderWidth:2, fill:false },
+      { label:"Stress",     data: tlData.stress, borderColor:"#F78166", tension:.4, pointRadius:0, borderWidth:2, fill:false },
+      { label:"Attention",  data: tlData.att,    borderColor:"#58A6FF", tension:.4, pointRadius:0, borderWidth:2, fill:false },
+    ]
+  },
+  options: {
+    animation: false,
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{ display:true, labels:{ color:"#8B949E", boxWidth:10, font:{size:10} } } },
+    scales: {
+      x: { ticks:{ color:"#484F58", maxTicksLimit:6, font:{size:9} }, grid:{ color:"#1C2128" } },
+      y: { min:0, max:100, ticks:{ color:"#484F58", font:{size:9} }, grid:{ color:"#1C2128" } }
+    }
+  }
+});
+
+function pushTimeline(d) {
+  const now = new Date().toLocaleTimeString("en","{ hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit' }");
+  tlData.labels.push(now);
+  tlData.conf.push(d.confidence_score || 0);
+  tlData.stress.push(d.stress_score || 0);
+  tlData.att.push(d.attention_score || 0);
+  if (tlData.labels.length > 60) {
+    tlData.labels.shift(); tlData.conf.shift();
+    tlData.stress.shift(); tlData.att.shift();
+  }
+  tlChart.update("none");
+}
+
+function setRing(id, txtId, pct) {
+  const offset = CIRCUM * (1 - pct / 100);
+  document.getElementById(id).style.strokeDashoffset = offset;
+  document.getElementById(txtId).textContent = Math.round(pct) + "%";
+}
+
+function renderEmoBars(scores) {
+  const container = document.getElementById("emoBars");
+  container.innerHTML = EMOTIONS.map(e => {
+    const pct = scores[e] || 0;
+    const col = EMO_COLORS[e];
+    return `<div class="emo-row">
+      <span class="emo-name">${e}</span>
+      <div class="emo-track"><div class="emo-fill" style="width:${pct}%;background:${col}"></div></div>
+      <span class="emo-pct">${pct.toFixed(0)}%</span>
+    </div>`;
+  }).join("");
+}
+
+function renderAlerts(d) {
+  const alerts = [];
+  if (!d.face_found) {
+    alerts.push({ cls:"warn", icon:"fa-face-meh", text:"No face detected" });
+  } else {
+    const eyeOk = d.eye_contact_score >= 65;
+    alerts.push({ cls: eyeOk?"good":"warn", icon: eyeOk?"fa-eye":"fa-eye-slash",
+      text: eyeOk ? `Eye contact: ${d.eye_contact_score}% — Good` : `Eye contact low: ${d.eye_contact_score}%` });
+
+    const stressOk = d.stress_score < 40;
+    alerts.push({ cls: stressOk?"good":"danger", icon: stressOk?"fa-face-smile":"fa-face-grimace",
+      text: `Stress ${d.stress_level}: ${d.stress_score?.toFixed(0)}%` });
+
+    const attOk = d.attention_state === "Focused";
+    alerts.push({ cls: attOk?"good":"warn", icon: attOk?"fa-crosshairs":"fa-triangle-exclamation",
+      text: attOk ? "Focused & Engaged" : "Distracted — look at camera" });
+
+    const confOk = d.confidence_score >= 65;
+    alerts.push({ cls: confOk?"good":"warn", icon: confOk?"fa-medal":"fa-arrow-trend-up",
+      text: `Confidence ${d.confidence_score?.toFixed(0)}%` });
+  }
+  document.getElementById("alertRow").innerHTML = alerts.map(a =>
+    `<div class="alert-item ${a.cls}">
+      <i class="fa-solid ${a.icon}"></i>
+      <span>${a.text}</span>
+    </div>`
+  ).join("");
+}
+
+function updateUI(d) {
+  // Status dot
+  const dot  = document.getElementById("statusDot");
+  const stxt = document.getElementById("statusText");
+  if (d.face_found) {
+    dot.className = "status-dot live";
+    stxt.textContent = `Analysing · ${d.face_count || 1} face${(d.face_count||1)>1?"s":""}`;
+  } else {
+    dot.className = "status-dot";
+    stxt.textContent = "No face detected";
+  }
+
+  document.getElementById("noFaceOverlay").classList.toggle("show", !d.face_found);
+
+  document.getElementById("faceStatus").textContent =
+    d.face_found ? `${d.face_count||1} Face${(d.face_count||1)>1?"s":""} Found` : "No Face";
+  document.getElementById("attStatus").textContent =
+    d.face_found ? `Attention: ${d.attention_state||"—"}` : "Attention: —";
+
+  document.getElementById("fpsBadge").textContent = `${(d.fps||0).toFixed(1)} FPS`;
+
+  if (!d.face_found) return;
+
+  const emo = d.dominant || "Neutral";
+  document.getElementById("emoIcon").textContent  = EMO_ICONS[emo] || "😐";
+  document.getElementById("emoLabel").textContent = emo;
+  document.getElementById("emoLabel").style.color  = EMO_COLORS[emo] || "#8B949E";
+  const topScore = (d.scores||{})[emo] || 0;
+  document.getElementById("emoConf").textContent   = topScore.toFixed(0) + "%";
+
+  if (d.scores) renderEmoBars(d.scores);
+
+  const conf = d.confidence_score || 0;
+  const str  = d.stress_score     || 0;
+  const eye  = d.eye_contact_score|| 0;
+  const att  = d.attention_score  || 0;
+
+  document.getElementById("kpiConf").textContent    = conf.toFixed(0) + "%";
+  document.getElementById("kpiConfLvl").textContent = conf>70?"High":conf>45?"Medium":"Low";
+  document.getElementById("kpiStress").textContent  = str.toFixed(0) + "%";
+  document.getElementById("kpiStressLvl").textContent = d.stress_level || "Low";
+  document.getElementById("kpiEye").textContent     = eye.toFixed(0) + "%";
+  document.getElementById("kpiEyeLvl").textContent  = eye>65?"Good":"Needs Work";
+  document.getElementById("kpiAtt").textContent     = att.toFixed(0) + "%";
+  document.getElementById("kpiAttLvl").textContent  = d.attention_state || "Focused";
+
+  document.getElementById("kpiConf").style.color   = conf>70?"#7EE787":conf>45?"#FFA657":"#F78166";
+  document.getElementById("kpiStress").style.color = str<35?"#7EE787":str<60?"#FFA657":"#F78166";
+  document.getElementById("kpiEye").style.color    = eye>65?"#58A6FF":"#FFA657";
+  document.getElementById("kpiAtt").style.color    = att>65?"#D2A8FF":"#8B949E";
+
+  setRing("ringConf",   "ringConfTxt",   conf);
+  setRing("ringEye",    "ringEyeTxt",    eye);
+  setRing("ringStress", "ringStressTxt", str);
+
+  renderAlerts(d);
+
+  pushTimeline(d);
+}
+
+setInterval(async () => {
+  try {
+    const r = await fetch("/api/status");
+    const d = await r.json();
+    if (Object.keys(d).length) updateUI(d);
+  } catch(e) {}
+}, 250);
+
+async function startSession() {
+  const candidate = document.getElementById("candidateName").value.trim() || "Candidate";
+  const r = await fetch("/api/session/start", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ candidate })
+  });
+  const d = await r.json();
+  sessionKey   = d.session_key;
+  recording    = true;
+  sessionStart = Date.now();
+
+  document.getElementById("btnStart").disabled = true;
+  document.getElementById("btnStop").disabled  = false;
+  document.getElementById("recIndicator").classList.add("show");
+
+  timerInterval = setInterval(() => {
+    const s = Math.floor((Date.now() - sessionStart) / 1000);
+    const mm = String(Math.floor(s/60)).padStart(2,"0");
+    const ss = String(s%60).padStart(2,"0");
+    document.getElementById("sessionTimer").textContent = `${mm}:${ss}`;
+  }, 1000);
+}
+
+async function stopSession() {
+  await fetch("/api/session/stop", { method:"POST" });
+  clearInterval(timerInterval);
+  recording = false;
+  document.getElementById("btnStart").disabled = false;
+  document.getElementById("btnStop").disabled  = true;
+  document.getElementById("recIndicator").classList.remove("show");
+
+  if (sessionKey) {
+    if (confirm(`Session complete! View the analytics report?\n(Session: ${sessionKey})`)) {
+      window.location.href = `/report/${sessionKey}`;
+    }
+  }
+}
+
+function goToDashboard() { window.location.href = "/dashboard"; }
+</script>
+</body>
+</html>

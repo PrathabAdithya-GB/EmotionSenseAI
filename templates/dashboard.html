@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EmotionSense AI — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-deep:#080C10; --bg-base:#0D1117; --bg-card:#161B22; --bg-card2:#1C2128;
+  --border:#30363D; --accent:#58A6FF; --green:#7EE787; --red:#F78166;
+  --purple:#D2A8FF; --orange:#FFA657; --yellow:#E3B341;
+  --text-main:#E6EDF3; --text-sub:#8B949E; --text-dim:#484F58;
+  --radius:12px; --radius-sm:8px; --font:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg-deep);color:var(--text-main);min-height:100vh}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg-base)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(13,17,23,.85);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px;
+}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:1.1rem;font-weight:700;color:var(--text-main);text-decoration:none;}
+.nav-brand .logo-icon{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:16px;}
+.nav-links{display:flex;gap:4px;}
+.nav-links a{padding:6px 14px;border-radius:var(--radius-sm);color:var(--text-sub);text-decoration:none;font-size:.875rem;font-weight:500;transition:all .2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--text-main);background:var(--bg-card);}
+.nav-links a.active{color:var(--accent);}
+
+.page-header{padding:2rem 2rem 1rem;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.page-title{font-size:1.5rem;font-weight:700;}
+.page-title span{color:var(--accent);}
+.page-sub{color:var(--text-sub);font-size:.875rem;margin-top:3px;}
+
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:var(--radius-sm);font-size:.85rem;font-weight:600;border:none;cursor:pointer;transition:all .2s;font-family:var(--font);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#79BAFF;box-shadow:0 0 16px #58A6FF33;}
+.btn-ghost{background:var(--bg-card2);color:var(--text-sub);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text-main);border-color:var(--accent);}
+
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;padding:0 2rem 1.5rem;}
+@media(max-width:900px){.stat-row{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
+.stat-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-sub);font-weight:500;}
+.stat-val{font-size:2rem;font-weight:700;font-family:var(--mono);margin-top:4px;}
+.stat-sub{font-size:.75rem;color:var(--text-sub);margin-top:3px;}
+
+.content-grid{display:grid;grid-template-columns:1fr 360px;gap:1.5rem;padding:0 2rem 2rem;}
+@media(max-width:1000px){.content-grid{grid-template-columns:1fr;}}
+
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:.875rem;font-weight:600;}
+.card-header .ch-icon{color:var(--accent);}
+.card-body{padding:16px;}
+
+.sess-table{width:100%;border-collapse:collapse;font-size:.83rem;}
+.sess-table th{padding:9px 12px;text-align:left;color:var(--text-sub);font-weight:500;border-bottom:1px solid var(--border);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;}
+.sess-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-main);vertical-align:middle;}
+.sess-table tr:last-child td{border-bottom:none;}
+.sess-table tr:hover td{background:var(--bg-card2);}
+
+.pill{display:inline-block;padding:2px 9px;border-radius:100px;font-size:.7rem;font-weight:600;}
+.pill-green{background:#7EE78722;color:var(--green);border:1px solid #7EE78744;}
+.pill-red  {background:#F7816622;color:var(--red);  border:1px solid #F7816644;}
+.pill-blue {background:#58A6FF22;color:var(--accent);border:1px solid #58A6FF44;}
+.pill-grey {background:#8B949E22;color:var(--text-sub);border:1px solid #8B949E44;}
+
+.action-link{color:var(--accent);text-decoration:none;font-size:.78rem;font-weight:500;}
+.action-link:hover{text-decoration:underline;}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-sub);}
+.empty-state i{font-size:2.5rem;margin-bottom:12px;opacity:.4;}
+
+.chart-box{height:220px;padding:0 0 8px;position:relative;}
+.charts-col{display:flex;flex-direction:column;gap:1rem;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/">
+    <div class="logo-icon">🧠</div>
+    EmotionSense AI
+  </a>
+  <div class="nav-links">
+    <a href="/"><i class="fa-solid fa-video"></i> Live</a>
+    <a href="/dashboard" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Analytics <span>Dashboard</span></div>
+    <div class="page-sub">All recorded sessions and aggregate performance metrics</div>
+  </div>
+  <a href="/" class="btn btn-primary">
+    <i class="fa-solid fa-video"></i> New Session
+  </a>
+</div>
+
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-label">Total Sessions</div>
+    <div class="stat-val" style="color:var(--accent)">{{ sessions|length }}</div>
+    <div class="stat-sub">All recorded interviews</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg Confidence</div>
+    <div class="stat-val" id="avgConf" style="color:var(--green)">—</div>
+    <div class="stat-sub">Across all sessions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg Stress</div>
+    <div class="stat-val" id="avgStress" style="color:var(--orange)">—</div>
+    <div class="stat-sub">Across all sessions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg Attention</div>
+    <div class="stat-val" id="avgAtt" style="color:var(--purple)">—</div>
+    <div class="stat-sub">Across all sessions</div>
+  </div>
+</div>
+
+<div class="content-grid">
+
+  <div class="card">
+    <div class="card-header">
+      <i class="fa-solid fa-table-list ch-icon"></i>
+      Session History
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto;">
+      {% if sessions %}
+      <table class="sess-table">
+        <thead>
+          <tr>
+            <th>Session ID</th>
+            <th>Candidate</th>
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sessions %}
+          <tr>
+            <td>
+              <span style="font-family:var(--mono);font-size:.75rem;color:var(--text-sub)">{{ s.session_key }}</span>
+            </td>
+            <td>{{ s.candidate or 'Candidate' }}</td>
+            <td style="color:var(--text-sub);font-size:.78rem">
+              {{ s.started_at[:16].replace('T',' ') if s.started_at else '—' }}
+            </td>
+            <td>
+              {% if s.duration_s %}
+                <span class="pill pill-blue">{{ s.duration_s // 60 }}m {{ s.duration_s % 60 }}s</span>
+              {% else %}
+                <span class="pill pill-grey">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="/report/{{ s.session_key }}" class="action-link">
+                <i class="fa-solid fa-chart-bar"></i> Report
+              </a>
+              &nbsp;
+              <a href="/api/report/pdf/{{ s.session_key }}" class="action-link" style="color:var(--red)">
+                <i class="fa-solid fa-file-pdf"></i> PDF
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-database"></i>
+        <p>No sessions yet.<br>Start a live session to see data here.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="charts-col">
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-chart-pie ch-icon"></i>
+        Emotion Distribution
+      </div>
+      <div class="card-body">
+        <div style="height:200px;position:relative;">
+          <canvas id="emoDistChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-chart-column ch-icon"></i>
+        Performance Scores
+      </div>
+      <div class="card-body">
+        <div style="height:200px;position:relative;">
+          <canvas id="perfChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const sessions = {{ sessions | tojson }};
+
+async function loadAggregates() {
+  let totalConf=0, totalStress=0, totalAtt=0, count=0;
+  const emoTotals = {};
+  const confArr=[], stressArr=[], attArr=[], eyeArr=[];
+
+  for (const s of sessions) {
+    try {
+      const r = await fetch(`/api/report/data/${s.session_key}`);
+      const d = await r.json();
+      const agg = d.aggregated || {};
+      if (!agg || !agg.avg_confidence) continue;
+      totalConf   += agg.avg_confidence  || 0;
+      totalStress += agg.avg_stress      || 0;
+      totalAtt    += agg.avg_attention   || 0;
+      count++;
+      confArr.push(agg.avg_confidence   || 0);
+      stressArr.push(agg.avg_stress     || 0);
+      attArr.push(agg.avg_attention     || 0);
+      eyeArr.push(agg.avg_eye_contact   || 0);
+      for (const [emo, pct] of Object.entries(agg.emotion_distribution||{})) {
+        emoTotals[emo] = (emoTotals[emo]||0) + pct;
+      }
+    } catch(e) {}
+  }
+
+  if (count > 0) {
+    document.getElementById("avgConf").textContent   = (totalConf/count).toFixed(0)+"%";
+    document.getElementById("avgStress").textContent = (totalStress/count).toFixed(0)+"%";
+    document.getElementById("avgAtt").textContent    = (totalAtt/count).toFixed(0)+"%";
+  }
+
+  const emoLabels = Object.keys(emoTotals);
+  const emoVals   = Object.values(emoTotals);
+  const EMO_COLORS = {
+    Happy:"#7EE787",Sad:"#58A6FF",Angry:"#F78166",
+    Fear:"#D2A8FF",Surprise:"#79C0FF",Disgust:"#FFA657",Neutral:"#8B949E"
+  };
+  new Chart(document.getElementById("emoDistChart"), {
+    type: "doughnut",
+    data: {
+      labels: emoLabels.length ? emoLabels : ["No data"],
+      datasets: [{ data: emoLabels.length ? emoVals : [1],
+        backgroundColor: emoLabels.length ? emoLabels.map(e=>EMO_COLORS[e]||"#8B949E") : ["#30363D"],
+        borderWidth: 2, borderColor: "#161B22", hoverOffset: 4 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      cutout:"65%",
+      plugins:{ legend:{ position:"right", labels:{ color:"#8B949E", boxWidth:12, font:{size:10} } } }
+    }
+  });
+
+  const perfLabels = sessions.slice(0, confArr.length).map((s,i)=>`S${i+1}`);
+  new Chart(document.getElementById("perfChart"), {
+    type:"bar",
+    data:{
+      labels: perfLabels.length ? perfLabels : ["No sessions"],
+      datasets:[
+        { label:"Confidence", data:confArr, backgroundColor:"#7EE78777", borderColor:"#7EE787", borderWidth:1.5, borderRadius:4 },
+        { label:"Attention",  data:attArr,  backgroundColor:"#58A6FF77", borderColor:"#58A6FF", borderWidth:1.5, borderRadius:4 },
+        { label:"Stress",     data:stressArr,backgroundColor:"#F7816677",borderColor:"#F78166", borderWidth:1.5, borderRadius:4 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:"#8B949E", boxWidth:10, font:{size:10} } } },
+      scales:{
+        x:{ ticks:{color:"#484F58",font:{size:9}}, grid:{color:"#1C2128"} },
+        y:{ min:0, max:100, ticks:{color:"#484F58",font:{size:9}}, grid:{color:"#1C2128"} }
+      }
+    }
+  });
+}
+
+loadAggregates();
+</script>
+</body>
+</html>

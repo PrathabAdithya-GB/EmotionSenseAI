@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EmotionSense AI — Session Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-deep:#080C10;--bg-base:#0D1117;--bg-card:#161B22;--bg-card2:#1C2128;
+  --border:#30363D;--accent:#58A6FF;--green:#7EE787;--red:#F78166;
+  --purple:#D2A8FF;--orange:#FFA657;--yellow:#E3B341;
+  --text-main:#E6EDF3;--text-sub:#8B949E;--text-dim:#484F58;
+  --radius:12px;--radius-sm:8px;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg-deep);color:var(--text-main);min-height:100vh;}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg-base)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+nav{position:sticky;top:0;z-index:100;background:rgba(13,17,23,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px;}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:1.1rem;font-weight:700;color:var(--text-main);text-decoration:none;}
+.nav-brand .logo-icon{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:16px;}
+.nav-links{display:flex;gap:4px;}
+.nav-links a{padding:6px 14px;border-radius:var(--radius-sm);color:var(--text-sub);text-decoration:none;font-size:.875rem;font-weight:500;transition:all .2s;}
+.nav-links a:hover{color:var(--text-main);background:var(--bg-card);}
+
+.page-wrap{max-width:1200px;margin:0 auto;padding:2rem;}
+.report-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:2rem;}
+.rh-left{}
+.report-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;background:var(--accent-glow,#58A6FF22);border:1px solid #58A6FF44;font-size:.72rem;font-weight:600;color:var(--accent);margin-bottom:10px;}
+.report-title{font-size:1.8rem;font-weight:700;}
+.report-title span{color:var(--accent);}
+.report-meta{display:flex;gap:20px;margin-top:8px;flex-wrap:wrap;}
+.rm-item{display:flex;align-items:center;gap:7px;font-size:.82rem;color:var(--text-sub);}
+.rm-item i{color:var(--accent);font-size:.8rem;}
+.rh-actions{display:flex;gap:10px;flex-wrap:wrap;}
+
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:var(--radius-sm);font-size:.85rem;font-weight:600;border:none;cursor:pointer;transition:all .2s;font-family:var(--font);text-decoration:none;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#79BAFF;box-shadow:0 0 16px #58A6FF33;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-danger:hover{filter:brightness(1.15);}
+.btn-ghost{background:var(--bg-card2);color:var(--text-sub);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text-main);border-color:var(--accent);}
+
+.score-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
+@media(max-width:700px){.score-hero{grid-template-columns:repeat(2,1fr);}}
+.score-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;position:relative;overflow:hidden;}
+.score-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.score-card.sc-green::before{background:var(--green);}
+.score-card.sc-blue::before{background:var(--accent);}
+.score-card.sc-orange::before{background:var(--orange);}
+.score-card.sc-purple::before{background:var(--purple);}
+.sc-icon{font-size:1.5rem;margin-bottom:6px;}
+.sc-val{font-size:2.2rem;font-weight:700;font-family:var(--mono);}
+.sc-label{font-size:.72rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:.07em;margin-top:3px;}
+.sc-badge{display:inline-block;margin-top:8px;padding:2px 10px;border-radius:100px;font-size:.7rem;font-weight:600;}
+
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;}
+@media(max-width:800px){.report-grid{grid-template-columns:1fr;}}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:.875rem;font-weight:600;}
+.card-header .ch-icon{color:var(--accent);}
+.card-body{padding:16px;}
+
+.emo-dist{display:flex;flex-direction:column;gap:12px;}
+.ed-row{display:flex;align-items:center;gap:10px;}
+.ed-name{width:68px;font-size:.8rem;color:var(--text-sub);}
+.ed-track{flex:1;height:12px;background:var(--bg-deep);border-radius:6px;overflow:hidden;}
+.ed-fill{height:100%;border-radius:6px;transition:width .6s ease;}
+.ed-pct{width:40px;font-size:.75rem;font-family:var(--mono);color:var(--text-dim);text-align:right;}
+
+.rec-list{display:flex;flex-direction:column;gap:10px;}
+.rec-item{display:flex;gap:12px;padding:12px 14px;background:var(--bg-deep);border-radius:var(--radius-sm);border:1px solid var(--border);}
+.rec-num{width:24px;height:24px;border-radius:50%;background:#58A6FF22;border:1px solid #58A6FF44;color:var(--accent);font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.rec-text{font-size:.83rem;color:var(--text-main);line-height:1.5;}
+
+.timeline-table{width:100%;border-collapse:collapse;font-size:.78rem;}
+.timeline-table th{padding:7px 10px;color:var(--text-sub);font-weight:500;border-bottom:1px solid var(--border);text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;}
+.timeline-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text-main);}
+.timeline-table tr:last-child td{border-bottom:none;}
+.timeline-table tr:hover td{background:var(--bg-card2);}
+.emo-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+
+.chart-box{height:250px;padding:0;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/">
+    <div class="logo-icon">🧠</div>
+    EmotionSense AI
+  </a>
+  <div class="nav-links">
+    <a href="/"><i class="fa-solid fa-video"></i> Live</a>
+    <a href="/dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <div class="report-header">
+    <div class="rh-left">
+      <div class="report-badge"><i class="fa-solid fa-file-waveform"></i> Interview Report</div>
+      <div class="report-title">Session <span>{{ session_key[:8] }}…</span></div>
+      <div class="report-meta">
+        <div class="rm-item"><i class="fa-solid fa-user"></i> {{ sess.get('candidate','Candidate') }}</div>
+        <div class="rm-item"><i class="fa-solid fa-calendar"></i>
+          {{ sess.get('started_at','')[:16].replace('T',' ') if sess.get('started_at') else '—' }}
+        </div>
+        <div class="rm-item"><i class="fa-solid fa-clock"></i>
+          {% if sess.get('duration_s') %}
+            {{ sess.duration_s // 60 }}m {{ sess.duration_s % 60 }}s
+          {% else %}—{% endif %}
+        </div>
+        <div class="rm-item"><i class="fa-solid fa-database"></i>
+          {{ agg.get('total_seconds', 0) }} data points
+        </div>
+      </div>
+    </div>
+    <div class="rh-actions">
+      <a href="/api/report/pdf/{{ session_key }}" class="btn btn-danger">
+        <i class="fa-solid fa-file-pdf"></i> Download PDF
+      </a>
+      <a href="/dashboard" class="btn btn-ghost">
+        <i class="fa-solid fa-arrow-left"></i> Dashboard
+      </a>
+    </div>
+  </div>
+
+  <div class="score-hero">
+    {% set conf  = agg.get('avg_confidence', 0) %}
+    {% set str   = agg.get('avg_stress',     0) %}
+    {% set att   = agg.get('avg_attention',  0) %}
+    {% set eye   = agg.get('avg_eye_contact',0) %}
+    <div class="score-card sc-green">
+      <div class="sc-icon">🏆</div>
+      <div class="sc-val" style="color:var(--green)">{{ conf | round(0) | int }}%</div>
+      <div class="sc-label">Confidence</div>
+      <span class="sc-badge" style="background:#7EE78722;color:var(--green)">
+        {% if conf > 70 %}High{% elif conf > 45 %}Medium{% else %}Low{% endif %}
+      </span>
+    </div>
+    <div class="score-card sc-orange">
+      <div class="sc-icon">🧘</div>
+      <div class="sc-val" style="color:var(--orange)">{{ str | round(0) | int }}%</div>
+      <div class="sc-label">Stress</div>
+      <span class="sc-badge" style="background:#FFA65722;color:var(--orange)">
+        {{ agg.get('stress_level','Low') }}
+      </span>
+    </div>
+    <div class="score-card sc-blue">
+      <div class="sc-icon">👁️</div>
+      <div class="sc-val" style="color:var(--accent)">{{ eye | round(0) | int }}%</div>
+      <div class="sc-label">Eye Contact</div>
+      <span class="sc-badge" style="background:#58A6FF22;color:var(--accent)">
+        {% if eye > 65 %}Good{% else %}Needs Work{% endif %}
+      </span>
+    </div>
+    <div class="score-card sc-purple">
+      <div class="sc-icon">🎯</div>
+      <div class="sc-val" style="color:var(--purple)">{{ att | round(0) | int }}%</div>
+      <div class="sc-label">Attention</div>
+      <span class="sc-badge" style="background:#D2A8FF22;color:var(--purple)">
+        {{ agg.get('attention_state','—') }}
+      </span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+      <i class="fa-solid fa-chart-area ch-icon"></i> Performance Timeline
+    </div>
+    <div class="card-body">
+      <div class="chart-box">
+        <canvas id="timelineChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="report-grid">
+
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-face-smile ch-icon"></i> Emotion Distribution
+      </div>
+      <div class="card-body">
+        {% set EMO_COLORS = {
+          'Happy':'#7EE787','Sad':'#58A6FF','Angry':'#F78166',
+          'Fear':'#D2A8FF','Surprise':'#79C0FF','Disgust':'#FFA657','Neutral':'#8B949E'
+        } %}
+        {% set emo_dist = agg.get('emotion_distribution', {}) %}
+        {% if emo_dist %}
+        <div class="emo-dist">
+          {% for emo, pct in emo_dist.items() | sort(attribute='1', reverse=True) %}
+          <div class="ed-row">
+            <span class="ed-name">{{ emo }}</span>
+            <div class="ed-track">
+              <div class="ed-fill" style="width:{{ pct }}%;background:{{ EMO_COLORS.get(emo,'#8B949E') }}"></div>
+            </div>
+            <span class="ed-pct">{{ pct }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--text-sub);font-size:.85rem;">No emotion data recorded.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-chart-pie ch-icon"></i> Emotion Breakdown
+      </div>
+      <div class="card-body" style="display:flex;align-items:center;justify-content:center;">
+        <div style="height:220px;width:100%;position:relative;">
+          <canvas id="donutChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-lightbulb ch-icon"></i> AI Recommendations
+      </div>
+      <div class="card-body">
+        <div class="rec-list">
+          {% for rec in agg.get('recommendations', []) %}
+          <div class="rec-item">
+            <div class="rec-num">{{ loop.index }}</div>
+            <div class="rec-text">{{ rec }}</div>
+          </div>
+          {% else %}
+          <p style="color:var(--text-sub);font-size:.85rem;">No recommendations generated.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-timeline ch-icon"></i> Emotion Timeline
+      </div>
+      <div class="card-body" style="padding:0;max-height:280px;overflow-y:auto;">
+        {% if timeline %}
+        <table class="timeline-table">
+          <thead><tr><th>Time</th><th>Emotion</th><th>Confidence</th><th>Stress</th></tr></thead>
+          <tbody>
+            {% set COLORS = {
+              'Happy':'#7EE787','Sad':'#58A6FF','Angry':'#F78166',
+              'Fear':'#D2A8FF','Surprise':'#79C0FF','Disgust':'#FFA657','Neutral':'#8B949E'
+            } %}
+            {% for row in timeline %}
+            <tr>
+              <td style="font-family:var(--mono);color:var(--text-sub)">{{ row.t }}</td>
+              <td>
+                <span class="emo-dot" style="background:{{ COLORS.get(row.emo,'#8B949E') }}"></span>
+                {{ row.emo }}
+              </td>
+              <td style="font-family:var(--mono)">{{ row.conf | round(0) | int }}%</td>
+              <td style="font-family:var(--mono)">{{ row.str | round(0) | int }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="padding:30px;text-align:center;color:var(--text-sub)">No timeline data.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const tlData = {{ timeline | tojson }};
+if (tlData.length) {
+  new Chart(document.getElementById("timelineChart"), {
+    type:"line",
+    data:{
+      labels: tlData.map(d=>d.t),
+      datasets:[
+        { label:"Confidence", data:tlData.map(d=>d.conf), borderColor:"#7EE787", tension:.4, pointRadius:0, borderWidth:2, fill:false },
+        { label:"Stress",     data:tlData.map(d=>d.str),  borderColor:"#F78166", tension:.4, pointRadius:0, borderWidth:2, fill:false },
+        { label:"Attention",  data:tlData.map(d=>d.att),  borderColor:"#58A6FF", tension:.4, pointRadius:0, borderWidth:2, fill:false },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:"#8B949E", boxWidth:12, font:{size:10} } } },
+      scales:{
+        x:{ ticks:{color:"#484F58", maxTicksLimit:10, font:{size:9}}, grid:{color:"#1C2128"} },
+        y:{ min:0, max:100, ticks:{color:"#484F58",font:{size:9}}, grid:{color:"#1C2128"} }
+      }
+    }
+  });
+}
+
+const emoDist = {{ agg.get('emotion_distribution', {}) | tojson }};
+const EMO_COLORS = {
+  Happy:"#7EE787",Sad:"#58A6FF",Angry:"#F78166",
+  Fear:"#D2A8FF",Surprise:"#79C0FF",Disgust:"#FFA657",Neutral:"#8B949E"
+};
+const emoKeys = Object.keys(emoDist);
+new Chart(document.getElementById("donutChart"), {
+  type:"doughnut",
+  data:{
+    labels: emoKeys.length ? emoKeys : ["No data"],
+    datasets:[{
+      data: emoKeys.length ? Object.values(emoDist) : [1],
+      backgroundColor: emoKeys.length ? emoKeys.map(e=>EMO_COLORS[e]||"#8B949E") : ["#30363D"],
+      borderWidth:2, borderColor:"#161B22", hoverOffset:6
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    cutout:"60%",
+    plugins:{ legend:{ position:"bottom", labels:{ color:"#8B949E", boxWidth:12, font:{size:10} } } }
+  }
+});
+</script>
+</body>
+</html>
